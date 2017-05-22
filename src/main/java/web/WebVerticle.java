@@ -24,7 +24,9 @@ import io.vertx.ext.web.handler.sockjs.PermittedOptions;
 import io.vertx.ext.web.handler.sockjs.SockJSHandler;
 import io.vertx.core.logging.Logger;
 import utils.JsonMapper;
+import utils.Password;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -115,6 +117,7 @@ public class WebVerticle extends AbstractVerticle {
         wcSql.getConnection(ar -> {
             // Read the request's content and create an instance of User.
             final User user = JsonMapper.read(routingContext.getBodyAsString(), User.class);
+            user.pwd = Password.hashPassword(user.pwd);
             SQLConnection connection = ar.result();
             insertUser(user, connection, (r) ->
                     routingContext.response()
@@ -146,8 +149,19 @@ public class WebVerticle extends AbstractVerticle {
 
     private void addChat(RoutingContext routingContext) {
         wcSql.getConnection(ar -> {
+
             // Read the request's content and create an instance of Chat.
             final Chat chat = JsonMapper.read(routingContext.getBodyAsString(), Chat.class);
+            //hardcode the image height and length
+            if (chat.message.type == Message.Type.IMAGE){
+                chat.message.imgHeight = 10;
+                chat.message.imgLength = 20;
+            }
+            //hardcode the video source and length
+            else if (chat.message.type == Message.Type.VIDEO){
+                chat.message.videoSource = "VIMEO";
+                chat.message.videoLength = 100;
+            }
             java.util.Date date = new java.util.Date();
             chat.timeStamp = new java.sql.Timestamp(date.getTime());
             SQLConnection connection = ar.result();
@@ -168,7 +182,7 @@ public class WebVerticle extends AbstractVerticle {
                 "(select userid from chatserver.users where username = ? limit 1)," +
                 "?, CURRENT_TIMESTAMP())";
         connection.updateWithParams(sql,
-                new JsonArray().add(chat.senderId).add(chat.receiverId).add(chat.message.message),
+                new JsonArray().add(chat.senderId).add(chat.receiverId).add(JsonMapper.write(chat.message).toString()),
                 (ar) -> {
                     if (ar.failed()) {
                         next.handle(Future.failedFuture(ar.cause()));
@@ -196,7 +210,6 @@ public class WebVerticle extends AbstractVerticle {
                 SQLConnection connection = ar.result();
                 select(senderId, receiverId, numOfMessages, pageNum, connection, result -> {
                     if (result.succeeded()) {
-                        logger.info(result.result());
                         routingContext.response()
                                 .setStatusCode(200)
                                 .putHeader("content-type", "application/json; charset=utf-8")
@@ -239,11 +252,8 @@ public class WebVerticle extends AbstractVerticle {
 
         connection.queryWithParams(sqlQuery, params, ar -> {
             if (ar.succeeded()) {
-                logger.info("succeeded");
                 if (ar.result().getNumRows() >= 1) {
-                    ar.result().getRows().forEach(row -> logger.info(row));
                     List<Chat> chats = ar.result().getRows().stream().map(Chat::new).collect(Collectors.toList());
-                    logger.info(chats);
                     resultHandler.handle(Future.succeededFuture(chats));
                 } else {
                     logger.info("failed");

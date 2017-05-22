@@ -67,8 +67,9 @@
             load();
         }, "json");
     }
-    function sendMessage(senderName, receiverName, message) {
-        $.post("/api/users/sendMessage", JSON.stringify({senderId: senderName, receiverId: receiverName, message: message}), function () {
+    function sendMessage(senderName, receiverName, message, messageType) {
+        $.post("/api/users/sendMessage", JSON.stringify({senderId: senderName, receiverId: receiverName,
+        message:{message: message, type: messageType}}), function () {
             load();
         }, "json");
     }
@@ -81,7 +82,9 @@
         $("#messages").children().remove();
         $.get("/api/users/fetchMessage", paramMap, function (data) {
             $.each(data, function(key, val) {
-             $("<tr><td>" + val.senderId + "</td><td>" + val.receiverId + "</td><td>" + val.message.message + "</td>").appendTo("#messages");
+             $("<tr><td>" + val.senderId + "</td><td>" + val.receiverId + "</td><td>" + val.message.message + "</td><td>" +
+             val.message.type + "</td><td>" + val.message.imgHeight + "</td><td>" +
+              val.message.videoSource + "</td>").appendTo("#messages");
             });
         });
     }
@@ -139,22 +142,24 @@
             var button = $(event.relatedTarget);
             var action = button.data('action');
             var id = button.data('id');
+            var sender = button.data('name');
             var messageAction = $("#messageAction");
             messageAction.unbind();
             var modal = $(this);
             if (action === "send") {
                 modal.find('.modal-title').text("Send a message");
-                modal.find('#sender-name').val("");
+                modal.find('#sender-name').val(sender);
                 modal.find('#receiver-name').val("");
                 modal.find('#user-mesg').val("");
+                modal.find('#user-mesg-type').val("");
                 messageAction.click(function () {
-                    sendMessage($("#sender-name").val(), $("#receiver-name").val(), $("#user-mesg").val());
+                    sendMessage($("#sender-name").val(), $("#receiver-name").val(), $("#user-mesg").val(),$("#user-mesg-type").val() );
                     $('#messageModal').modal('toggle');
                 });
             }
             if (action === "fetch") {
                 modal.find('.modal-title').text("Fetch messages");
-                modal.find('#sender-name').val("");
+                modal.find('#sender-name').val(sender);
                 modal.find('#receiver-name').val("");
                 modal.find('#num-of-messages').val("");
                 modal.find('#page-num').val("");
@@ -212,6 +217,10 @@
                     <div class="form-group">
                         <label for="user-mesg" class="control-label">Message (Only if you are sending a message):</label>
                         <input type="text" class="form-control" id="user-mesg">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-mesg-type" class="control-label">Message Type(Only if you are sending a message):</label>
+                        <input type="text" class="form-control" id="user-mesg-type">
                     </div>
                     <div class="form-group">
                         <label for="num-of-messages" class="control-label">Num of Messages (Optional):</label>

@@ -53,7 +53,7 @@ public class Chat {
         this.senderId = json.getString("SENDER");
         this.receiverId = json.getString("RECEIVER");
         String tempMessage = json.getString("MESSAGE");
-        Message message = new Message(tempMessage);
+        Message message = JsonMapper.read(tempMessage, Message.class);
         this.message = message;
     }
 
