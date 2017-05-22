@@ -151,12 +151,13 @@
                 modal.find('#sender-name').val(sender);
                 modal.find('#receiver-name').val("");
                 modal.find('#user-mesg').val("");
-                modal.find('#user-mesg-type').val("");
+                modal.find('#user-mesg-type option:selected').val("");
                 messageAction.click(function () {
-                    sendMessage($("#sender-name").val(), $("#receiver-name").val(), $("#user-mesg").val(),$("#user-mesg-type").val() );
+                    sendMessage($("#sender-name").val(), $("#receiver-name").val(), $("#user-mesg").val(),$("#user-mesg-type option:selected").val() );
                     $('#messageModal').modal('toggle');
                 });
             }
+            var sender = button.data('name');
             if (action === "fetch") {
                 modal.find('.modal-title').text("Fetch messages");
                 modal.find('#sender-name').val(sender);
@@ -220,7 +221,11 @@
                     </div>
                     <div class="form-group">
                         <label for="user-mesg-type" class="control-label">Message Type(Only if you are sending a message):</label>
-                        <input type="text" class="form-control" id="user-mesg-type">
+                        <select id="user-mesg-type">
+                            <option selected value="TEXT">TEXT</option>
+                            <option value="IMAGE">IMAGE</option>
+                            <option value="VIDEO">VIDEO</option>
+                        </select>
                     </div>
                     <div class="form-group">
                         <label for="num-of-messages" class="control-label">Num of Messages (Optional):</label>
