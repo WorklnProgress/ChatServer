@@ -35,6 +35,8 @@ INSTRUCTIONS to run the server :
 	java -jar chat_server-1.0-SNAPSHOT-fat.jar -conf common.conf 
 4) You can run many instances of the server at different ports on localhost. E.g.
 	java -jar chat_server-1.0-SNAPSHOT-fat.jar -conf conf1.conf 
+5) You can then go to http://localhost:8082/chat/index.html or http://localhost:8081/chat/index.html
+	to access the client.
 	
 	
 Time permitting, further plans that I had:
