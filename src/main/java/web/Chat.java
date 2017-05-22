@@ -1,12 +1,9 @@
 package web;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-import org.joda.time.DateTime;
 import utils.JsonMapper;
 
-import java.sql.Time;
 import java.sql.Timestamp;
 
 /**

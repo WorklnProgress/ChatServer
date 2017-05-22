@@ -16,6 +16,5 @@ public class WebService {
     public static void main(String[] args){
         Vertx vertx = Vertx.vertx();
         vertx.deployVerticle(new WebVerticle());
-        vertx.deployVerticle(new WebPersistenceVerticle());
     }
 }

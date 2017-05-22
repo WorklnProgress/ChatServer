@@ -1,10 +1,7 @@
 package web;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 import io.vertx.core.json.JsonObject;
-import utils.JsonMapper;
 
 /**
  * Created by priye on 5/20/17.
@@ -12,9 +9,7 @@ import utils.JsonMapper;
 public class User {
 
     @JsonProperty(required = false) int id;
-
     @JsonProperty(required = true) String name;
-
     @JsonProperty(required = true) String pwd;
 
     public User(){

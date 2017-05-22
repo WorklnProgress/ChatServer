@@ -7,7 +7,6 @@ package web;
 import io.vertx.core.DeploymentOptions;
 import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpClientRequest;
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.unit.Async;
 import io.vertx.ext.unit.TestContext;
@@ -29,20 +28,10 @@ public class WebVerticleTest {
     private Vertx vertx;
     private Integer port;
 
-    /**
-     * Before executing our test, let's deploy our verticle.
-     * <p/>
-     * This method instantiates a new Vertx and deploy the verticle. Then, it waits in the verticle has successfully
-     * completed its start sequence (thanks to `context.asyncAssertSuccess`).
-     *
-     * @param context the test context.
-     */
     @Before
     public void setUp(TestContext context) throws IOException {
         vertx = Vertx.vertx();
 
-        // Let's configure the verticle to listen on the 'test' port (randomly picked).
-        // We create deployment options and set the _configuration_ json object:
         ServerSocket socket = new ServerSocket(0);
         port = socket.getLocalPort();
         socket.close();
@@ -51,7 +40,7 @@ public class WebVerticleTest {
                 .setConfig(new JsonObject()
                         .put("http.port", port)
                         .put("username", "root")
-                        .put("password", "123ublong2me")
+                        .put("password", "PWD123!")
                         .put("host", System.getProperty("db.host", "localhost"))
                         .put("queryTimeout", Long.parseLong(System.getProperty("db.queryTimeout", "10000"))
                         ));
@@ -76,14 +65,9 @@ public class WebVerticleTest {
      * @param context the test context
      */
     @Test
-    public void testMyApplication(TestContext context) {
-        // This test is asynchronous, so get an async handler to inform the test when we are done.
+    public void testChatServer(TestContext context) {
         final Async async = context.async();
-
-        // We create a HTTP client and query our application. When we get the response we check it contains the 'Hello'
-        // message. Then, we call the `complete` method on the async handler to declare this async (and here the test) done.
-        // Notice that the assertions are made on the 'context' object and are not Junit assert. This ways it manage the
-        // async aspect of the test the right way.
+        //default page should have "Hello"
         vertx.createHttpClient().getNow(port, "localhost", "/", response -> {
             response.handler(body -> {
                 context.assertTrue(body.toString().contains("Hello"));
@@ -105,6 +89,16 @@ public class WebVerticleTest {
         });
     }
 
+    @Test
+    public void checkThatWeCanGet(TestContext context) {
+        Async async = context.async();
+        HttpClientRequest req = vertx.createHttpClient().get(port, "localhost", "/api/getUsers");
+        req.handler(response -> {
+            context.assertEquals(response.statusCode(), 200);
+            async.complete();
+        });
+        req.end();
+    }
 
     @Test
     public void testDoNothing(TestContext ctx){

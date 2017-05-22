@@ -1,13 +1,12 @@
 package web;
 
 import io.vertx.core.*;
-import io.vertx.core.eventbus.EventBus;
-import io.vertx.core.http.HttpMethod;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
+import io.vertx.core.logging.Logger;
 import io.vertx.core.logging.LoggerFactory;
 import io.vertx.ext.asyncsql.AsyncSQLClient;
 import io.vertx.ext.asyncsql.MySQLClient;
@@ -16,17 +15,10 @@ import io.vertx.ext.sql.UpdateResult;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
-import io.vertx.ext.web.handler.ErrorHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-import io.vertx.ext.web.handler.sockjs.BridgeEventType;
-import io.vertx.ext.web.handler.sockjs.BridgeOptions;
-import io.vertx.ext.web.handler.sockjs.PermittedOptions;
-import io.vertx.ext.web.handler.sockjs.SockJSHandler;
-import io.vertx.core.logging.Logger;
 import utils.JsonMapper;
 import utils.Password;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -37,8 +29,9 @@ public class WebVerticle extends AbstractVerticle {
 
     private static final Logger logger = LoggerFactory.getLogger(WebVerticle.class);
 
-    //config with ports
+    //Sql connection
     AsyncSQLClient wcSql;
+    //config with port
     JsonObject lconfig;
 
     @Override
@@ -46,7 +39,9 @@ public class WebVerticle extends AbstractVerticle {
 
         lconfig = config();
         // Create a JDBC client
-        JsonObject sqlConfig = new JsonObject().put("username", "root").put("password", "123ublong2me")
+        // The password should ideally sit in a separate config like database.ini (hardcoded for the purpose of the exercise)
+        // Also user will usually be the account under which the server job runs.
+        JsonObject sqlConfig = new JsonObject().put("username", "root").put("password", "PWD123!")
                 .put("queryTimeout", 10000);
         wcSql = MySQLClient.createShared(vertx, sqlConfig, "ChatStore");
 
@@ -79,12 +74,14 @@ public class WebVerticle extends AbstractVerticle {
                     .end("<h1>Hello</h1>");
         });
 
+        //load static content
         router.route("/chat/*").handler(StaticHandler.create("chat"));
-        router.get("/api/getUsers").handler(this::getAll);
+        //redirect routes to their handlers
+        router.get("/api/getUsers").handler(this::getAll); //displays all users
         router.route("/api/users*").handler(BodyHandler.create());
-        router.post("/api/users/signIn").handler(this::addUser);
-        router.post("/api/users/sendMessage").handler(this::addChat);
-        router.get("/api/users/fetchMessage").handler(this::fetchMessages);
+        router.post("/api/users/signIn").handler(this::addUser); //create user api
+        router.post("/api/users/sendMessage").handler(this::addChat); //send and persist message api
+        router.get("/api/users/fetchMessage").handler(this::fetchMessages); //get paginated messages api
 
         // Create the HTTP server and pass the "accept" method to the request handler.
         vertx
@@ -106,16 +103,17 @@ public class WebVerticle extends AbstractVerticle {
         }
     }
 
-
     @Override
     public void stop() throws Exception {
         // Close the JDBC client.
         wcSql.close();
     }
 
+
+    // Section to deal with Create User api
     private void addUser(RoutingContext routingContext) {
         wcSql.getConnection(ar -> {
-            // Read the request's content and create an instance of User.
+            // Read the requests content and create an instance of User.
             final User user = JsonMapper.read(routingContext.getBodyAsString(), User.class);
             user.pwd = Password.hashPassword(user.pwd);
             SQLConnection connection = ar.result();
@@ -147,10 +145,11 @@ public class WebVerticle extends AbstractVerticle {
     }
 
 
+    //Section to send and persist messages in mysql db
     private void addChat(RoutingContext routingContext) {
         wcSql.getConnection(ar -> {
 
-            // Read the request's content and create an instance of Chat.
+            // Read the requests content and create an instance of Chat.
             final Chat chat = JsonMapper.read(routingContext.getBodyAsString(), Chat.class);
             //hardcode the image height and length
             if (chat.message.type == Message.Type.IMAGE){
@@ -196,7 +195,7 @@ public class WebVerticle extends AbstractVerticle {
                 });
     }
 
-
+    //section to fetch messages with optional parameters of number of messages per page and which page num to fetch
     private void fetchMessages(RoutingContext routingContext) {
         MultiMap params = routingContext.request().params();
         final String senderId = params.get("senderId");
@@ -263,9 +262,9 @@ public class WebVerticle extends AbstractVerticle {
         });
     }
 
+    //section to get all users
     private void getAll(RoutingContext routingContext) {
         wcSql.getConnection(ar -> {
-            // Read the request's content and create instances of Users.
             SQLConnection connection = ar.result();
             connection.query("SELECT * FROM chatserver.Users", result -> {
                 if (result.succeeded()) {
