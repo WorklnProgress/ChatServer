@@ -39,9 +39,11 @@ public class WebVerticle extends AbstractVerticle {
 
         lconfig = config();
         // Create a JDBC client
-        // The password should ideally sit in a separate config like database.ini (hardcoded for the purpose of the exercise)
+        // The password should ideally sit in a separate config like database.ini (currently in common.conf)
         // Also user will usually be the account under which the server job runs.
-        JsonObject sqlConfig = new JsonObject().put("username", "root").put("password", "PWD123!")
+        String username = lconfig.getString("db.user", "root");
+        String password = lconfig.getString("db.pwd", "PWD123!");
+        JsonObject sqlConfig = new JsonObject().put("username", username).put("password", password)
                 .put("queryTimeout", 10000);
         wcSql = MySQLClient.createShared(vertx, sqlConfig, "ChatStore");
 
