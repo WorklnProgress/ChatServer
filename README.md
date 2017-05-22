@@ -1,6 +1,6 @@
 # ChatServer
 The chat server has been created using vertx, mysql for persistence layer, maven as build tool,
-angular and bootstrap for a basic web gui.  
+jquery and bootstrap for a basic web gui.  
 The distribution is using a fat jar.
 The server is hosted on localhost
 The http port is configurable.
