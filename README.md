@@ -42,3 +42,4 @@ Time permitting, further plans that I had:
 2) More testing
 3) User authentication 
 4) Split the persistence to another verticle to leverage verticles as microservices.
+5) Use of websockets/sockjs
