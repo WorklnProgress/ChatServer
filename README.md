@@ -1,4 +1,5 @@
 # ChatServer
+More comments
 The chat server has been created using vertx, mysql for persistence layer, maven as build tool,
 jquery and bootstrap for a basic web gui.  
 The distribution is using a fat jar.
