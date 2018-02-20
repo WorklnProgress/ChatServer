@@ -147,6 +147,7 @@ public class WebVerticle extends AbstractVerticle {
     }
 
     //Unneccersary comment.
+    //second local comment
     //Section to send and persist messages in mysql db
     //frivolous master commit
     private void addChat(RoutingContext routingContext) {
