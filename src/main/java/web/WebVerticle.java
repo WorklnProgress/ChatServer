@@ -148,6 +148,7 @@ public class WebVerticle extends AbstractVerticle {
 
     //Unneccersary comment.
     //Section to send and persist messages in mysql db
+    //frivolous master commit
     private void addChat(RoutingContext routingContext) {
         wcSql.getConnection(ar -> {
 
