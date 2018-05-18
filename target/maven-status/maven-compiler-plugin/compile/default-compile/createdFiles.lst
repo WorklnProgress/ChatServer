@@ -1,0 +1,8 @@
+utils/Password.class
+utils/JsonMapper.class
+web/Message.class
+web/Message$Type.class
+web/Chat.class
+web/User.class
+web/WebVerticle.class
+web/WebService.class

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Client</title>
+
+    <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container" role="main">
+    <div class="page-header">
+        <div class="row">
+            <div class="col-md-12">
+                <h1>Users</h1>
+                <button class="pull-right btn btn-primary user-add" data-action="add" data-toggle="modal"
+                        data-target="#userModal">
+                    <span class="glyphicon glyphicon-plus"></span> Sign Up
+                </button>
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Name</th>
+                        <th>Password</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody id="content">
+                    <!-- filled using Ajax -->
+                    </tbody>
+                </table>
+                <h1>Messages</h1>
+                <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th>Sender</th>
+                        <th>Receiver</th>
+                        <th>Message</th>
+                    </tr>
+                    </thead>
+                    <tbody id="messages">
+                    <!-- filled using Ajax -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<script>
+    $(function () {
+        load();
+        initUserModal();
+        initMessageModal();
+    });
+    $(document).ready(function() {
+        $('#userModal').on('hidden.bs.modal', function() {
+            $(this).find("input,textarea,select").val('').end();
+        });
+        $('#messageModal').on('hidden.bs.modal', function() {
+            $(this).find("input,textarea,select").val('').end();
+        });
+    });
+    function createUser(name, pwd) {
+        $.post("/api/users/signIn", JSON.stringify({name: name, pwd: pwd}), function () {
+            load();
+        }, "json");
+    }
+    function sendMessage(senderName, receiverName, message, messageType) {
+        $.post("/api/users/sendMessage", JSON.stringify({senderId: senderName, receiverId: receiverName,
+        message:{message: message, type: messageType}}), function () {
+            load();
+        }, "json");
+    }
+    function fetchMessage(senderName, receiverName, numOfMessages, pageNum) {
+        var paramMap = { "senderId" : senderName, "receiverId" : receiverName };
+        if (numOfMessages && pageNum) {
+            paramMap["numOfMessages"] = numOfMessages;
+            paramMap["pageNum"] = pageNum;
+        }
+        $("#messages").children().remove();
+        $.get("/api/users/fetchMessage", paramMap, function (data) {
+            $.each(data, function(key, val) {
+             $("<tr><td>" + val.senderId + "</td><td>" + val.receiverId + "</td><td>" + val.message.message + "</td><td>" +
+             val.message.type + "</td><td>" + val.message.imgHeight + "</td><td>" +
+              val.message.videoSource + "</td>").appendTo("#messages");
+            });
+        });
+    }
+    function load() {
+        $("#content").children().remove();
+        $.getJSON("/api/getUsers", function (data) {
+            $.each(data, function (key, val) {
+                $("<tr><td>" + val.id + "</td><td>" + val.name + "</td><td>" + val.pwd + "</td>" +
+                        "<td>" +
+                        "<button data-action='send' class='btn btn-primary btn-sm send-message' " +
+                        "data-toggle='modal' " +
+                        "data-target='#messageModal' " +
+                        "data-name='" + val.name + "' " +
+                        "data-origin='" + val.pwd + "' " +
+                        "data-id='" + val.id + "'>" +
+                        "<span class='glyphicon glyphicon-pencil'></span>" +
+                        "Send" +
+                        "</button>" +
+                        "&nbsp;" +
+                        "<button data-action='fetch' class='btn btn-success btn-sm fetch-message' " +
+                        "data-toggle='modal' " +
+                        "data-target='#messageModal' " +
+                        "data-userOne='" + val.name + "' " +
+                        "data-userTwo='" + val.pwd + "' " +
+                        "data-id='" + val.id + "'>" +
+                        "<span class='glyphicon glyphicon-pencil'></span>" +
+                        "Fetch" +
+                        "</button>" +
+                        "</td>" +
+                        "</tr>").appendTo("#content");
+            });
+        });
+    }
+    function initUserModal() {
+        $("#userModal").on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var action = button.data('action');
+            var id = button.data('id');
+            var userAction = $("#userAction");
+            userAction.unbind();
+            var modal = $(this);
+            if (action === "add") {
+                modal.find('.modal-title').text("Add a user");
+                modal.find('#user-name').val("");
+                modal.find('#user-pwd').val("");
+                userAction.click(function () {
+                    createUser($("#user-name").val(), $("#user-pwd").val());
+                    $('#userModal').modal('toggle');
+                });
+            }
+        })
+    }
+    function initMessageModal() {
+        $("#messageModal").on('show.bs.modal', function (event) {
+            var button = $(event.relatedTarget);
+            var action = button.data('action');
+            var id = button.data('id');
+            var sender = button.data('name');
+            var messageAction = $("#messageAction");
+            messageAction.unbind();
+            var modal = $(this);
+            if (action === "send") {
+                modal.find('.modal-title').text("Send a message");
+                modal.find('#sender-name').val(sender);
+                modal.find('#receiver-name').val("");
+                modal.find('#user-mesg').val("");
+                modal.find('#user-mesg-type option:selected').val("");
+                messageAction.click(function () {
+                    sendMessage($("#sender-name").val(), $("#receiver-name").val(), $("#user-mesg").val(),$("#user-mesg-type option:selected").val() );
+                    $('#messageModal').modal('toggle');
+                });
+            }
+            var sender = button.data('name');
+            if (action === "fetch") {
+                modal.find('.modal-title').text("Fetch messages");
+                modal.find('#sender-name').val(sender);
+                modal.find('#receiver-name').val("");
+                modal.find('#num-of-messages').val("");
+                modal.find('#page-num').val("");
+                messageAction.click(function () {
+                    fetchMessage($("#sender-name").val(), $("#receiver-name").val(), $("#num-of-messages").val(), $("#page-num").val());
+                    $('#messageModal').modal('toggle');
+                });
+            }
+        })
+    }
+</script>
+<div class="modal fade" id="userModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title" id="userModalTitle">Add a user</h4>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="user-name" class="control-label">Name:</label>
+                        <input type="text" class="form-control" id="user-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-pwd" class="control-label">Pwd:</label>
+                        <input type="text" class="form-control" id="user-pwd">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" id="userAction" class="btn btn-primary">Save</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" id="messageModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                <h4 class="modal-title" id="messageModalTitle">Send/Fetch a message</h4>
+            </div>
+            <div class="modal-body">
+                <form>
+                    <div class="form-group">
+                        <label for="sender-name" class="control-label">Sender Name:</label>
+                        <input type="text" class="form-control" id="sender-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="receiver-name" class="control-label">Receiver Name:</label>
+                        <input type="text" class="form-control" id="receiver-name">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-mesg" class="control-label">Message (Only if you are sending a message):</label>
+                        <input type="text" class="form-control" id="user-mesg">
+                    </div>
+                    <div class="form-group">
+                        <label for="user-mesg-type" class="control-label">Message Type(Only if you are sending a message):</label>
+                        <select id="user-mesg-type">
+                            <option selected value="TEXT">TEXT</option>
+                            <option value="IMAGE">IMAGE</option>
+                            <option value="VIDEO">VIDEO</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="num-of-messages" class="control-label">Num of Messages (Optional):</label>
+                        <input type="text" class="form-control" id="num-of-messages">
+                    </div>
+                    <div class="form-group">
+                        <label for="page-num" class="control-label">Page Num (Optional):</label>
+                        <input type="text" class="form-control" id="page-num">
+                    </div>
+
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                <button type="button" id="messageAction" class="btn btn-primary">Ok</button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
